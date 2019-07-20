@@ -1,0 +1,289 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link href="https://fonts.googleapis.com/css?family=Zilla+Slab:400,700&display=swap" rel="stylesheet"> 
+		<link rel="stylesheet" href="css/reset.css">
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css">
+		<link rel="stylesheet" href="css/style.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/monokai.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section id="one">
+					<img src="https://research.mozilla.org/files/2017/04/webassembly-page-280.png" alt="">
+					<br>Tale of WebAssembly and Rust
+				</section>
+				<section id="two">
+						<code>-- whoami --</code> <br> <br>
+						creativcoder on 🌐 <br>
+						Data Engineer at Ather Energy <br>
+						Blog at: <a href="https://creativcoder.github.io">creativcoder.github.io</a> <br>
+						Author of Mastering Rust 2nd edition <a href="https://cutt.ly/eGa49y">https://cutt.ly/eGa49y</a>  <br>
+						Compilers and programming language aficionado <br>
+				</section>
+				<section id="three">
+					Topics we'll cover <br><br>
+					>> Motivation and origin <br>
+					>> What exactly is WebAssembly? <br>
+					>> Using WebAssembly <br>
+					>> Compiling Rust to WebAssembly <br>
+					>> Higher level tools and library ecosystem <br>
+					>> When and where can I use WebAssembly? <br>
+					>> Demo #1 - Exposing a Rust function (Follow along) <br>
+					>> Demo #2 - A live markdown editor (Overview) <br>
+					>> WebAssembly in the wild <br>
+					>> Q/A <br>
+				</section>
+				<section id="two">
+						Guess the number!
+						<p id="num">284 ms</p>
+					</section>
+					<section>
+							Average human reaction time is ~284 ms <br>
+							Source: <a href="https://www.humanbenchmark.com/tests/reactiontime/statistics">https://www.humanbenchmark.com/tests/reactiontime/statistics</a> 
+						</section>
+					<section>
+						Websites that take more than 5 seconds to load has a <a href="https://www.section.io/blog/page-load-time-bounce-rate/">33% bounce rate</a>.<br>
+						Performant web applications is a top priority these days. <br>
+						Another reason: Code Reuse
+					</section>
+					<section>
+						At a high level<br> WebAssembly is suite of technologies that allows: <br>
+						1) Write code in any language. <br>
+						2) Run code on any platform. <br>
+						3) Run at near native speed. <br>
+					</section>
+					<section>
+						Previous attempts: <br>
+						>> Native Client aka NaCl (Google) 2011 <br>
+						>> Asm.js (Mozilla) 2013 <br> <br>
+						as an attempt to <mark>run native apps on web</mark>.
+					</section>
+					<section>
+						Problems with NaCl <br>
+						>> Not cross-platform (Can only run on Chrome) <br>
+						>> Not defined as a standard spec
+					</section>
+					<section>
+						Asm.js - a strict subset of Javascript <br> <br>
+						>> Allows near native speed of code from other languages.<br>
+						>> Lowers the dynamic-ness of JS types by introducing syntactic changes in code<br>
+					</section>
+					<section>
+						<code>var first = 5;</code> // in JS <br>
+						becomes <br>
+						<code>var second = first | 0;</code> // in asm.js <br>
+						This removes much of the dynamic checks at runtime by the JS interpreter.
+						</section>
+					<section>
+						How to write asm.js? <br> <br>
+						You don't write, you compile to asm.js <br>
+						Using Emscripten - An LLVM IR to Javascript (asm.js) compiler.
+						<a href="https://emscripten.org/">https://emscripten.org/</a> <br> <br>
+						Problem with asm.js: It's javascript again, which takes time to parse. <br>
+					</section>
+					<section>
+						A need to run native code on the web and to reuse code, forced browser vendors
+						to come up with these ad-hoc solutions.
+					</section>
+					<section>
+						Fast forward to recent time: <br>
+						Major browser vendors came towards a consensus on the expectations and the design philosophies.
+						They defined a standard, that became <mark>WebAssembly</mark>!
+					</section>
+				<section>
+						<center>
+							<img src="https://media.giphy.com/media/RLWwOuPbqObupogOLB/giphy.gif" alt="">
+						</center>
+						Aha! Sounds interesting. Tell me more
+					</section>
+				<section>
+					What is WebAssembly? <br> <br>
+					>> Successor to <code>asm.js</code> <br>
+					>> Has a standard W3C specification: <a href="http://webassembly.github.io/spec/core/index.html">http://webassembly.github.io/spec/core/index.html</a> <br>
+					>> Shipped in all major browsers
+				</section>
+				<section>
+					>> A secure and portable executable format<br>
+					>> Built mainly for running native apps on web, but not limited to.<br>
+				</section>
+					<section>
+						WebAssembly: a trending topic along with Rust (2019) <br>
+							<img src="img/wasm_trending.png" alt=""> <br>
+							Why such a hype?
+					</section>
+					<section>
+							>> Wasm code is fast to download and parse. <br>
+							>> Requires no runtime checks and executes directly. <br>
+							>> No garbage collection required; uses a simple linear memory buffer.<br>
+							>> Parses 20x faster than asm.js code. <br>
+					</section>
+					<section>
+							Comparing js code and wasm runtime phases<br>
+						<img src="img/Jswasm.png" alt="">
+					</section>
+					<section id="perf_demo">
+						How fast? <br> <br>
+						<p class="codepen" data-height="356" data-theme-id="dark" data-default-tab="result" data-user="jtiscione" data-slug-hash="yxybjX" style="height: 356px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;" data-pen-title="WebAssembly Performance Demo">
+								<span>See the Pen <a href="https://codepen.io/jtiscione/pen/yxybjX/">
+								WebAssembly Performance Demo</a> by Jason Tiscione (<a href="https://codepen.io/jtiscione">@jtiscione</a>)
+								on <a href="https://codepen.io">CodePen</a>.</span>
+							  </p>
+							  <script async src="https://static.codepen.io/assets/embed/ei.js"></script>
+					</section>
+					<section>
+						The Wasm spec is divided into two parts: <br>
+						1) <mark>The Core API</mark>: Defines the bytecode format, instruction, VM machine model.
+						The WebAssembly virtual machine is a stack-based machine. <br>
+						But, <br>Wait! What is a stack machine?
+					</section>
+					<section>
+						Two kinds of Virtual machine implementations
+						<img src="img/VMs.jpg" alt="">
+					</section>
+					<section>
+						2) <mark>Embedding and environment APIs</mark> - Currently we have the Javascript API defined with browser as the host environment.
+					</section>
+					<section>
+						Talk is cheap, show me wasm code: <br>
+						<img src="https://media.giphy.com/media/5AvMjXihK4hpe/giphy.gif" alt=""> <br>
+						
+					</section>
+					<section>
+						Behold the hello world WebAssembly module.
+							<img src="img/add_wat.png" alt=""> <br>
+							S-expression (wat) format of wasm code. (Only for debugging purpose)
+					</section>
+					<section>
+						WebAssembly has four concepts from execution perspective on the Web platform: <br>
+						>> <mark>WebAssembly.Module</mark>: The smallest unit of code that is executable or can be instantiated. <br>
+						Can be written in many languages:<br> such as C,C++, Rust, Go, C#, Java, Typescript. <br>
+						>> <mark>WebAssembly.Instance</mark>: An instance of a running wasm code. <br>
+						>> <mark>WebAssembly.Memory</mark>: A linear memory buffer for allocations during program execution. <br>
+						>> <mark>WebAssembly.Table</mark>: Lookup table for functions pointers <br>
+					</section>
+					<section>
+						WebAssembly has only four data types<br>
+						>> i32 <br> >> i64 <br> >> f32 <br> >> f64. <br>
+						Any complex data type from other languages need to be converted / serialized as
+						sequence of bytes.
+					</section>
+					<section>
+						That's the basics on WebAssembly. Let's move on to Rust!
+					</section>
+					<section>
+						Why use Rust as the language for writing WebAssembly
+						<img src="img/why_rust.png" alt=""> <br>
+						<a href="https://twitter.com/msftsecresponse/status/1151233411106799623">https://twitter.com/msftsecresponse/status/1151233411106799623</a>
+					</section>
+					<section id="rust_to_wasm">
+						Let's cook some WebAssembly from Rust <br> <br>
+						Recipe <br> <br>
+						>> <code>rustup target add wasm32-unknown-unknown</code> <br>
+						>> <code>cargo new my_wasm_lib --lib</code> <br>
+						>> <code>crate-type = "cdylib"</code><br>
+						>> <code>cargo build --target wasm32-unknown-unknown</code><br>
+					</section>
+					<section>
+							* Demo #1 <br> Exposing a Rust function (follow along)
+					</section>
+						<section>
+							When and where to use WebAssembly?
+							* Performance critical parts (React Vitual DOM) <br>
+							* WebGL code <br>
+							* Neural network training in browser <br>
+							* Scientific computing in browser <br>
+							* Simulation code <br>
+							* Game engines in browser <br>
+							* Cryptocurrency mining and blockchain systems <br>
+						</section>
+						<section>
+								When not to use WebAssembly? <br>
+								Usual places where Javascript is sufficient. <br>
+								Making and JS and wasm requires copying data back and forth (an overhead).
+							</section>
+						<section>
+							Rust Tooling and community for WebAssembly: <br>
+								>> <a href="https://webassembly.studio/">Try WebAssembly online</a><br>
+								>> <a href="https://rustwasm.github.io/wasm-pack/">wasm-pack</a>: One stop shop for building wasm modules <br>
+								>> <a href="https://github.com/rustwasm/wasm-bindgen">wasm-bindgen</a> Provides richer Rust types to JS through wasm<br>
+								>> <a href="https://rustwasm.github.io/2018/07/26/announcing-the-js-sys-crate.html">js-sys</a> wasm-bindgen bindings for JS APIs<br>
+								>> <a href="https://rustwasm.github.io/2018/09/26/announcing-web-sys.html">web-sys</a> wasm-bindgen bindings for Web DOM APIs <br>
+						</section>
+					<section>
+						Demo #2: <br>
+							Let's spin up a live markdown editor which uses
+							Rust library compiled to WebAssembly.
+					</section>
+						<section>
+							WebAssembly in the wild <br>
+							>> <a href="https://www.ebayinc.com/stories/blogs/tech/webassembly-at-ebay-a-real-world-use-case/">E-bay</a><br>
+							>> <a href="https://www.figma.com/blog/webassembly-cut-figmas-load-time-by-3x/">Figma</a> <br>
+							>> <a href="https://webassembly-security.com/google-keep-webassembly-module-analysis/">Google</a> <br>
+							>> <a href="https://blog.cloudflare.com/webassembly-on-cloudflare-workers/">Cloudflare</a> <br>
+							>> <a href="https://blogs.unity3d.com/2018/08/15/webassembly-is-here/">Unity</a> <br>
+							and many more in the the tweet thread below: <br>
+							<a href="https://twitter.com/JamesLMilner/status/1151824280914731008?s=08">https://twitter.com/JamesLMilner/status/1151824280914731008?s=08</a> 
+						</section>
+						<section>
+							Links to explore:<br>
+							>> <a href="https://hacks.mozilla.org/category/code-cartoons/"> Lin Clarks's series</a> <br>
+							>> <a href="https://rustwasm.github.io/book/introduction.html">Rust wasm book</a><br>
+							>> <a href="https://github.com/rustwasm/team">Wasm team</a> <br>
+							>> <a href="https://github.com/opensource101/rust_wasm_talk">This slide</a> <br>
+							>> <a href="https://blogs.unity3d.com/2018/09/17/webassembly-load-times-and-performance/">Wasm vs Asm.js</a> <br>
+							>> <a href="https://webassembly.org/docs/faq/">Wasm FAQ</a>
+						</section>
+						<section>
+								Interesting projects in WebAssembly: <br>
+								>> <a href="https://github.com/nebulet/nebulet">Nebulet</a> <br>
+								>> <a href="https://github.com/fastly/lucet">Lucet</a> <br>
+								>> <a href="https://github.com/perlin-network/life">Life</a> <br>
+								>> <a href="https://wasi.dev/">WASI - Wasm system interface</a> <br>
+								>> <a href="https://github.com/CraneStation/wasmtime">Wasmtime</a> 
+							</section>
+						<section>
+							Thank you! <br>
+							<center>
+								<img src="https://media.giphy.com/media/xT0xeuOy2Fcl9vDGiA/giphy.gif" alt="">
+							</center>
+							Questions?
+							</section>
+			</div>
+		</div>
+
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info about config & dependencies:
+			// - https://github.com/hakimel/reveal.js#configuration
+			// - https://github.com/hakimel/reveal.js#dependencies
+			Reveal.initialize({
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true }
+				]
+			});
+		</script>
+	</body>
+</html>
